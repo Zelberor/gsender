@@ -703,16 +703,19 @@ class GrblHalController {
         this.runner.on('status', (res) => {
             // grblHAL manual tool change protocol:
             // When firmware enters Tool state, send ACK (0xA3) once
-            if (res.activeState === GRBL_HAL_ACTIVE_STATE_TOOL && this.toolChangeContext.toolChangeOption === 'GrblHAL Toolchange Protocol') {
-                if (!this.grblHalToolChangePending) {
-                    this.grblHalToolChangePending = true;
-                    log.info('grblHAL toolchange protocol: sending ACK (0xA3), suspending sender');
-                    this.write(GRBLHAL_REALTIME_COMMANDS.TOOL_CHANGE_ACK);
-                    if (this.workflow.isRunning()) {
-                        this.workflow.pause({ data: 'M6', comment: 'grblhal toolchange' });
+            if (this.toolChangeContext.toolChangeOption === 'GrblHAL Toolchange Protocol') {
+                if (res.activeState === GRBL_HAL_ACTIVE_STATE_TOOL) {
+                    if (!this.grblHalToolChangePending) {
+                        this.grblHalToolChangePending = true;
+                        log.info('grblHAL toolchange protocol: sending ACK (0xA3), suspending sender');
+                        this.write(GRBLHAL_REALTIME_COMMANDS.TOOL_CHANGE_ACK);
+                        if (this.workflow.isRunning()) {
+                            this.workflow.pause({ data: 'M6', comment: 'grblhal toolchange' });
+                        }
                     }
-                } else {
+                } else if (this.grblHalToolChangePending) {
                     this.grblHalToolChangePending = false;
+                    log.info('grblHAL toolchange protocol: toolchange finished');
                     if (this.workflow.isPaused()) {
                         this.workflow.resume({ data: 'M6', comment: 'grblhal toolchange finished' });
                     }

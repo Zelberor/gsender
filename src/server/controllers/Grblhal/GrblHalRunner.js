@@ -331,15 +331,15 @@ class GrblHalRunner extends events.EventEmitter {
             // Ignore PRB if no success on probe
             const currentTool = this.state.status.currentTool;
 
-            if (name === 'PRB' && value.result === 1 && currentTool > 0) {
+            if (name === 'PRB' && value.result === 1 && currentTool > 0 && this.settings.toolTable[currentTool]) {
                 const nextSettings = {
                     ...this.settings,
                     toolTable: {
                         ...this.settings.toolTable,
                         [currentTool]: {
-                            ...this.settings.toolTable[currentTool],
+                            ...(this.settings.toolTable[currentTool] || {}),
                             toolOffsets: {
-                                ...this.settings.toolTable[currentTool].toolOffsets,
+                                ...((this.settings.toolTable[currentTool]?.toolOffsets) || {}),
                                 x: Number(value.x),
                                 y: Number(value.y),
                                 z: Number(value.z)
